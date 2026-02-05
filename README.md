@@ -1,7 +1,7 @@
 # Gromov-Wasserstein Optimal Transport
 
 Implementation of several Sinkhorn-based Gromov-Wasserstein (GW) solvers.
-The file `main.py` provides a working example on a 3D shape.
+The file `main.py` provides several code examples.
 
 ## Overview
 
@@ -34,3 +34,10 @@ Compute gradients with respect to point cloud coordinates:
 - `gradient_quadraticgw`: Gradients for quadratic GW
 - `gradient_kernelgw`: Gradients for kernel-based GW
 - `gradient_cntgw`: Gradients through dimensionality reduction
+
+### Applications
+
+Compute gradients with respect to point cloud coordinates:
+- `barycenters`: GW barycenters for CNT costs
+- `gradient_flows`: GW gradient flows for CNT costs
+
