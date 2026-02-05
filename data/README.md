@@ -7,4 +7,5 @@ Horse shapes are from the [SMAL dataset](https://smal.is.tue.mpg.de).
     month = jul,
     year = {2017},
     month_numeric = {7}
-}```
+}
+```
