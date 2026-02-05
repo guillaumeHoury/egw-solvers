@@ -24,7 +24,7 @@ from applications.gradient_flows import gradient_flow
 
 if __name__ == "__main__":
     ### 1 - Solvers comparison ###
-    """
+
     ARGS = {'eps': 1e-3,
         'numItermax': 100,
         'stop_criterion': 'energy',
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     for solver in exact_solvers:
         start_time = time.time()
         solver.to('cuda')
-        solver.solve(verbose=True)
+        solver.solve(verbose=False)
         print(f"Solver: {solver.__class__.__name__} \t Time: {time.time() - start_time}")
         P = solver.transport_plan(lazy=False).cpu()
         solver.to('cpu')
@@ -59,11 +59,11 @@ if __name__ == "__main__":
 
     for solver in approx_solvers:
         start_time = time.time()
-        solver.solve(verbose=True)
+        solver.solve(verbose=False)
         print(f"Solver: {solver.__class__.__name__} \t Time: {time.time() - start_time}")
         P = solver.transport_plan(lazy=True)
         plot_transfer(X, Y, P, lazy=True)
-    """
+
 
     ### 2 - Gradients ###
     """N, M = 1500, 1500
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     plot_pointcloud(bar)"""
 
     ### 4 - Flow ###
-    N, M = 1500, 1500
+    """N, M = 1500, 1500
     X = load_pointcloud_from_image('data/Sbis.png', N=N)
     Y = load_pointcloud_from_image('data/Cter.png', N=M)
 
@@ -122,6 +122,6 @@ if __name__ == "__main__":
             'SINK_ARGS': {'symmetrize': True, 'numItermax': 25, 'stopThr': 1e-6}
             }
 
-    X_t_list = gradient_flow(X, Y, cost, approx_dims=20, iters=500, lbda=2.5, momentum=0.15, solver_kwargs=ARGS,
+    X_t_list = gradient_flow(X, Y, cost, approx_dims=50, iters=200, lbda=15, momentum=0.9, solver_kwargs=ARGS,
                              record_step=10, plot=False)
-    plot_flow(X_t_list, X)
+    plot_flow(X_t_list, X)"""
