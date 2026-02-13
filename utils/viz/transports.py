@@ -76,6 +76,8 @@ def plot_transport(points1, points2, transport, savefile=None, normalize=True, *
     ax.add_collection(lines)
 
     ax.set_aspect('equal')
+    plt.tight_layout()
+
     if savefile is not None: plt.savefig(savefile)
     plt.show()
 
@@ -118,6 +120,7 @@ def plot_transfer(points1, points2, transport, source_dim=0, lazy=False, colors_
 
     axs[0] = plot_pointcloud(points1.cpu().numpy(), ax=axs[0], c=colors_source.cpu().numpy(), **kwargs)
     axs[1] = plot_pointcloud(points2.cpu().numpy(), ax=axs[1], c=transfered_color.cpu().numpy(), **kwargs)
+    plt.tight_layout()
 
     if savefile is not None: plt.savefig(savefile)
     if show: plt.show()

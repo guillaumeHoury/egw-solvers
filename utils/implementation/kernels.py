@@ -80,7 +80,7 @@ def cost_from_kernelmatrix(K):
 #####################################
 
 
-def kernel_pca(X, a, kernel, dim=2, return_eigenvalues=False):
+def kernel_pca(X, a, kernel, dim=2, return_eigendecomp=False, tol=None):
     """
     Perform kernel PCA for dimensionality reduction.
     
@@ -92,28 +92,36 @@ def kernel_pca(X, a, kernel, dim=2, return_eigenvalues=False):
         kernel: Kernel function taking (N, 1, D) and (1, N, D) arrays and outputs an (N,N) array. 
                 It should be compatible with Numpy inputs
         dim: Target dimensionality
-        return_eigenvalues: If True, also return eigenvalues
-    
+        return_eigendecomp: If True, also return eigenvalues and eigenvectors
+        tol: If not None, truncate eigenvalues smaller than tol * eigenvalues.max(). This prevents numerical issues
+             related to approximation errors for eigenvalues smaller than machine precision
     Returns:
         torch.Tensor: Transformed data, shape (N, dim)
         torch.Tensor (optional): Eigenvalues if return_eigenvalues=True
     """
     Xnp = X.cpu().numpy()
-    anp =  a.cpu().numpy() if a is not None else np.ones(Xnp.shape[0], dtype=np.float32) / Xnp.shape[0]
+    anp = a.cpu().numpy() if a is not None else np.ones(Xnp.shape[0], dtype=np.float32) / Xnp.shape[0]
 
     K = center_kernel(kernel(NumpyLazyTensor(Xnp[:, None, :]), NumpyLazyTensor(Xnp[None, :, :])), a=anp, lazy=True)
 
     eigenvalues, eigenvectors = symmetric_pca(K, dim)
+
+    if tol is not None:
+        filter = eigenvalues > (eigenvalues.max() * tol)
+        eigenvalues, eigenvectors = eigenvalues[filter], eigenvectors[:, filter]
+
     X_transformed = eigenvectors * np.sqrt(eigenvalues.clip(min=0))
     X_transformed = torch.tensor(X_transformed, dtype=X.dtype, device=X.device).contiguous()
 
-    if return_eigenvalues:
-        return X_transformed, torch.tensor(eigenvalues, dtype=X.dtype, device=X.device)
+    if return_eigendecomp:
+        return X_transformed, torch.tensor(eigenvalues, dtype=X.dtype, device=X.device), torch.tensor(eigenvectors,
+                                                                                                      dtype=X.dtype,
+                                                                                                      device=X.device).contiguous()
     else:
         return X_transformed
 
 
-def reduce_kernel(X, a, cost, approx_dim, return_eigenvalues=False):
+def reduce_kernel(X, a, cost, approx_dim, return_eigendecomp=False, tol=None):
     """
     Reduce dimensionality using kernel method from a cost function.
     
@@ -124,7 +132,9 @@ def reduce_kernel(X, a, cost, approx_dim, return_eigenvalues=False):
         a: Distribution weights, shape (N,)
         cost: Cost/distance function
         approx_dim: Target dimensionality
-        return_eigenvalues: If True, also return eigenvalues
+        return_eigendecomp: If True, also return eigenvalues and eigenvectors
+        tol: If not None, truncate eigenvalues smaller than tol * eigenvalues.max(). This prevents numerical issues
+             related to approximation errors for eigenvalues smaller than machine precision
     
     Returns:
         torch.Tensor: Embedded data, shape (N, approx_dim)
@@ -133,4 +143,4 @@ def reduce_kernel(X, a, cost, approx_dim, return_eigenvalues=False):
     X_0 = X[0].cpu().numpy()
     kernel = lambda u, v: (cost(u, X_0) + cost(v, X_0) - cost(u, v)) / 2
 
-    return kernel_pca(X, a, kernel, dim=approx_dim, return_eigenvalues=return_eigenvalues)
+    return kernel_pca(X, a, kernel, dim=approx_dim, return_eigendecomp=return_eigendecomp, tol=tol)

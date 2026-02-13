@@ -12,7 +12,7 @@ from utils.gradients.helpers import get_gradient_from_diffloss
 from utils.implementation.kernels import reduce_kernel
 
 
-def _kernel_projection(X, X_red, eigvals, a, cost):
+def _kernel_projection(X, eigvals, eigvects, a, cost):
     """
     Project points onto kernel PCA subspace differentiably.
     
@@ -34,16 +34,15 @@ def _kernel_projection(X, X_red, eigvals, a, cost):
     X_0 = X[0].detach()
     kernel = lambda u, v: (cost(u, X_0) + cost(v, X_0) - cost(u, v)) / 2
 
-    K = kernel(LazyTensor(X[:, None, :]), LazyTensor(X[None, :, :]))
+    K = kernel(LazyTensor(X[:, None, :]), LazyTensor(X[None, :, :].detach()))
 
-    K_sum = (K * LazyTensor(a[:, None, None])).sum(dim=0)
+    K_sum = (K * LazyTensor(a[:, None, None])).sum(dim=0).detach()
     K_sum2 = (K_sum.squeeze() * a).sum()
     K_centered = K - LazyTensor(K_sum[:, None]) - LazyTensor(K_sum[None, :]) + K_sum2  # (N, N)
+    return (K_centered * LazyTensor(eigvects[None, :, :])).sum(dim=1) / eigvals[None, :].sqrt()  # (N, D)
 
-    return (K_centered * LazyTensor(X_red[None, :, :])).sum(dim=1) / eigvals[None, :]  # (N, D)
 
-
-def _differentiate_kernelpca(X, a, cost, approx_dim):
+def _differentiate_kernelpca(X, a, cost, approx_dim, tol=1e-6):
     """
     Create differentiable kernel PCA embedding.
     
@@ -54,14 +53,14 @@ def _differentiate_kernelpca(X, a, cost, approx_dim):
         a: Distribution weights, shape (N,)
         cost: Cost function
         approx_dim: Target dimension for embedding
-    
+        tol: If not None, truncate eigenvalues smaller than tol * eigenvalues.max() in the kernel PCA. This prevents
+             numerical issues related to approximation errors for eigenvalues smaller than machine precision
     Returns:
         torch.Tensor: Differentiable embedding, shape (N, approx_dim)
     """
     with torch.no_grad():
-        X_emb, eigvalsX = reduce_kernel(X, a, cost, approx_dim, return_eigenvalues=True)
-
-    return _kernel_projection(X, X_emb, eigvalsX, a, cost)
+        X_emb, eigvalsX, eigvectsX = reduce_kernel(X, a, cost, approx_dim, return_eigendecomp=True, tol=tol)
+    return _kernel_projection(X, eigvalsX, eigvectsX, a, cost)
 
 
 def diffloss_cntgw(X, Y, costs, a=None, b=None, approx_dims=10, f_init=None, g_init=None, match_init=None,

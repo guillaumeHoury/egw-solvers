@@ -9,7 +9,7 @@ import pyvista as pv
 from matplotlib import pyplot as plt
 
 
-def plot_pointcloud(points, ax=None, c='black', savefile=None, **kwargs):
+def plot_pointcloud(points, ax=None, c='black', savefile=None, show=None, **kwargs):
     """
     Plot a point cloud in 1D, 2D, or 3D.
 
@@ -35,7 +35,8 @@ def plot_pointcloud(points, ax=None, c='black', savefile=None, **kwargs):
         The figure is shown only if ax=None. When providing ax, caller controls when to show the figure.
     """
     D = points.shape[1]
-    show = (ax is None)
+    if show is None:
+        show = (ax is None)
 
     if ax is None:
         fig = plt.figure(figsize=(6, 6))
@@ -50,11 +51,13 @@ def plot_pointcloud(points, ax=None, c='black', savefile=None, **kwargs):
 
     ax.set_aspect('equal')
 
-    if show:
-        plt.show()
+    plt.tight_layout()
 
     if savefile is not None:
-        plt.savefig(savefile, bbox_inches='tight')
+        plt.savefig(savefile, bbox_inches='tight', dpi=300)
+
+    if show:
+        plt.show()
 
     return ax
 

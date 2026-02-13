@@ -144,7 +144,7 @@ def diffloss_kernelgw(X, Y, costs, a=None, b=None, f_init=None, g_init=None, Z_i
         if cuda:
             solver.to('cuda')
 
-        solver.solve(verbose=True)
+        solver.solve()
         if cuda:
             solver.to('cpu')
 
